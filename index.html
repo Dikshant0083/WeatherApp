@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --secondary-color: #ffeaa7;
+            --text-color: #2d3436;
+            --error-color: #d63031;
+            --success-color: #00b894;
+            --card-shadow: 0 10px 20px rgba(0, 0, 0, 0.15), 0 6px 6px rgba(0, 0, 0, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            position: relative;
+            overflow-x: hidden;
+            background-color: #a29bfe;
+        }
+
+        /* Animated Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #ff9a9e, #fad0c4, #a1c4fd, #c2e9fb);
+            background-size: 400% 400%;
+            z-index: -1;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Floating Clouds */
+        .cloud {
+            position: fixed;
+            width: 200px;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50px;
+            z-index: -1;
+            animation: float 20s infinite linear;
+            opacity: 0.7;
+        }
+
+        .cloud:before, .cloud:after {
+            content: '';
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+        }
+
+        .cloud:before {
+            width: 100px;
+            height: 100px;
+            top: -50px;
+            left: 25px;
+        }
+
+        .cloud:after {
+            width: 80px;
+            height: 80px;
+            top: -35px;
+            right: 25px;
+        }
+
+        .cloud:nth-child(1) {
+            top: 15%;
+            left: -200px;
+            animation-duration: 35s;
+            transform: scale(0.6);
+        }
+
+        .cloud:nth-child(2) {
+            top: 40%;
+            left: -100px;
+            animation-duration: 45s;
+            animation-delay: 5s;
+            transform: scale(0.8);
+        }
+
+        .cloud:nth-child(3) {
+            top: 65%;
+            left: -150px;
+            animation-duration: 40s;
+            animation-delay: 10s;
+            transform: scale(0.7);
+        }
+
+        @keyframes float {
+            0% { transform: translateX(0) scale(0.8); }
+            100% { transform: translateX(calc(100vw + 300px)) scale(0.8); }
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            max-width: 520px;
+            width: 100%;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            z-index: 1;
+            max-height: 90vh;
+            overflow-y: auto;
+            margin: 20px auto;
+        }
+
+        .container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+        }
+
+        .container::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 10px;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2), 0 10px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+            text-align: center;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            letter-spacing: 1px;
+        }
+
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            width: 100%;
+        }
+
+        input, select, button {
+            padding: 0.8rem 1rem;
+            font-size: 1rem;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        input, select {
+            background-color: #f7f7f7;
+            color: var(--text-color);
+        }
+
+        select {
+            max-width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        select option {
+            padding: 8px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.2);
+            background-color: white;
+        }
+
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236c5ce7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1em;
+        }
+
+        button {
+            cursor: pointer;
+            background: linear-gradient(45deg, var(--primary-color), #8c7ae6);
+            color: white;
+            border: none;
+            font-weight: 700;
+            transition: all 0.4s ease;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        button:hover {
+            background: linear-gradient(45deg, #8c7ae6, var(--primary-color));
+            transform: translateY(-2px);
+            box-shadow: 0 7px 14px rgba(108, 92, 231, 0.3);
+        }
+
+        button:active {
+            transform: translateY(-1px);
+        }
+
+        button::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+
+        button:hover::after {
+            transform: scaleX(1);
+        }
+
+        .weather-info {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+            border-radius: 18px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            text-align: center;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            transform: scale(0.98);
+            opacity: 0.9;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .container:hover .weather-info {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .weather-info h2 {
+            font-size: 1.6rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+            letter-spacing: 0.5px;
+        }
+
+        .weather-info p {
+            margin-bottom: 0.7rem;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            opacity: 0.9;
+        }
+
+        .weather-info p:hover {
+            transform: translateY(-2px);
+            opacity: 1;
+        }
+
+        .weather-info img {
+            width: 90px;
+            height: 90px;
+            margin: 1rem 0;
+            filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.2));
+            transition: all 0.3s ease;
+        }
+
+        .weather-info img:hover {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .error {
+            color: var(--error-color);
+            font-weight: 700;
+            padding: 0.5rem;
+            border-radius: 8px;
+            background-color: rgba(214, 48, 49, 0.1);
+            animation: shake 0.5s ease-in-out;
+        }
+
+        .weather-details {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .detail-item {
+            background-color: rgba(255, 255, 255, 0.6);
+            padding: 10px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .detail-item:hover {
+            background-color: rgba(255, 255, 255, 0.9);
+            transform: translateY(-2px);
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        @media (min-width: 480px) {
+            .container {
+                padding: 2rem;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .weather-details {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                padding: 2.5rem;
+            }
+
+            .input-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+            }
+
+            #location {
+                grid-column: span 2;
+            }
+
+            button {
+                grid-column: span 2;
+            }
+
+            .weather-info h2 {
+                font-size: 2rem;
+            }
+
+            .weather-info img {
+                width: 100px;
+                height: 100px;
+            }
+
+            .weather-details {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Clouds -->
+    <div class="cloud"></div>
+    <div class="cloud"></div>
+    <div class="cloud"></div>
+
+    <div class="container">
+        <h1>Weather App</h1>
+        <div class="input-container">
+            <input type="text" id="location" placeholder="Enter city/town">
+            <select id="country">
+                <option value="">Select Country</option>
+            </select>
+            <select id="state" disabled>
+                <option value="">Select State/Province</option>
+            </select>
+            <button id="search">Get Weather</button>
+        </div>
+        <div id="weather-info" class="weather-info"></div>
+    </div>
+
+    <script>
+        const apiKey = 'a8a54605c272410b856150159250802';
+        const countrySelect = document.getElementById('country');
+        const stateSelect = document.getElementById('state');
+        const locationInput = document.getElementById('location');
+        const searchButton = document.getElementById('search');
+        const weatherInfo = document.getElementById('weather-info');
+
+        // Fetch weather data
+        async function fetchWeather(locationName, country, state) {
+            weatherInfo.innerHTML = '<p>Loading weather data...</p>';
+            
+            try {
+                // Include state in the query if available
+                const query = state 
+                    ? `${locationName},${state},${country}`
+                    : `${locationName},${country}`;
+                
+                const response = await fetch(`https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${query}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error.message);
+                }
+                
+                const weather = data.current;
+                const locationData = data.location;
+                
+                // Format location display with region if available
+                const locationDisplay = locationData.region 
+                    ? `${locationData.name}, ${locationData.region}, ${locationData.country}`
+                    : `${locationData.name}, ${locationData.country}`;
+                
+                weatherInfo.innerHTML = `
+                    <h2>${locationDisplay}</h2>
+                    <img src="${weather.condition.icon}" alt="${weather.condition.text}">
+                    <p><strong>${weather.condition.text}</strong></p>
+                    
+                    <div class="weather-details">
+                        <div class="detail-item">
+                            <p><strong>Temperature</strong></p>
+                            <p>${weather.temp_c}°C / ${weather.temp_f}°F</p>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <p><strong>Feels Like</strong></p>
+                            <p>${weather.feelslike_c}°C / ${weather.feelslike_f}°F</p>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <p><strong>Humidity</strong></p>
+                            <p>${weather.humidity}%</p>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <p><strong>Wind</strong></p>
+                            <p>${weather.wind_kph} km/h ${weather.wind_dir}</p>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <p><strong>Pressure</strong></p>
+                            <p>${weather.pressure_mb} mb</p>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <p><strong>UV Index</strong></p>
+                            <p>${weather.uv}</p>
+                        </div>
+                    </div>
+                    
+                    <p style="margin-top: 15px; font-size: 0.9rem;">Updated: ${weather.last_updated}</p>
+                `;
+            } catch (error) {
+                weatherInfo.innerHTML = `<p class="error">Error: ${error.message || 'Could not fetch weather data'}</p>`;
+            }
+        }
+
+        // Fetch countries and populate the select dropdown
+        async function fetchCountries() {
+            try {
+                weatherInfo.innerHTML = '<p>Loading countries...</p>';
+                const response = await fetch('https://api.first.org/data/v1/countries');
+                const data = await response.json();
+                
+                // Add placeholder option
+                const placeholderOption = document.createElement('option');
+                placeholderOption.value = '';
+                placeholderOption.textContent = 'Select Country';
+                countrySelect.innerHTML = ''; // Clear existing options
+                countrySelect.appendChild(placeholderOption);
+                
+                // Sort countries alphabetically
+                const sortedCountries = Object.entries(data.data).sort((a, b) => 
+                    a[1].country.localeCompare(b[1].country)
+                );
+                
+                for (const [code, country] of sortedCountries) {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = country.country;
+                    countrySelect.appendChild(option);
+                }
+                
+                weatherInfo.innerHTML = '<p>Enter a location and select a country to get weather information</p>';
+            } catch (error) {
+                console.error('Error fetching countries:', error);
+                weatherInfo.innerHTML = `<p class="error">Error loading countries. Please try again later.</p>`;
+            }
+        }
+
+        // Fetch states/provinces for the selected country
+        async function fetchStates(countryCode) {
+            // Clear and disable state select first
+            stateSelect.innerHTML = '<option value="">Select State/Province</option>';
+            stateSelect.disabled = true;
+            
+            // Only attempt to fetch states for specific countries with states/provinces data
+            const countriesWithStates = ['US', 'CA', 'AU', 'IN', 'BR', 'MX', 'DE', 'CN', 'RU'];
+            
+            if (!countriesWithStates.includes(countryCode)) {
+                return;
+            }
+            
+            try {
+                // Using static state data for major countries to avoid API limitations
+                const statesData = {
+                    'US': [
+                        {code: 'AL', name: 'Alabama'}, {code: 'AK', name: 'Alaska'}, 
+                        {code: 'AZ', name: 'Arizona'}, {code: 'AR', name: 'Arkansas'},
+                        {code: 'CA', name: 'California'}, {code: 'CO', name: 'Colorado'},
+                        {code: 'CT', name: 'Connecticut'}, {code: 'DE', name: 'Delaware'},
+                        {code: 'FL', name: 'Florida'}, {code: 'GA', name: 'Georgia'},
+                        {code: 'HI', name: 'Hawaii'}, {code: 'ID', name: 'Idaho'},
+                        {code: 'IL', name: 'Illinois'}, {code: 'IN', name: 'Indiana'},
+                        {code: 'IA', name: 'Iowa'}, {code: 'KS', name: 'Kansas'},
+                        {code: 'KY', name: 'Kentucky'}, {code: 'LA', name: 'Louisiana'},
+                        {code: 'ME', name: 'Maine'}, {code: 'MD', name: 'Maryland'},
+                        {code: 'MA', name: 'Massachusetts'}, {code: 'MI', name: 'Michigan'},
+                        {code: 'MN', name: 'Minnesota'}, {code: 'MS', name: 'Mississippi'},
+                        {code: 'MO', name: 'Missouri'}, {code: 'MT', name: 'Montana'},
+                        {code: 'NE', name: 'Nebraska'}, {code: 'NV', name: 'Nevada'},
+                        {code: 'NH', name: 'New Hampshire'}, {code: 'NJ', name: 'New Jersey'},
+                        {code: 'NM', name: 'New Mexico'}, {code: 'NY', name: 'New York'},
+                        {code: 'NC', name: 'North Carolina'}, {code: 'ND', name: 'North Dakota'},
+                        {code: 'OH', name: 'Ohio'}, {code: 'OK', name: 'Oklahoma'},
+                        {code: 'OR', name: 'Oregon'}, {code: 'PA', name: 'Pennsylvania'},
+                        {code: 'RI', name: 'Rhode Island'}, {code: 'SC', name: 'South Carolina'},
+                        {code: 'SD', name: 'South Dakota'}, {code: 'TN', name: 'Tennessee'},
+                        {code: 'TX', name: 'Texas'}, {code: 'UT', name: 'Utah'},
+                        {code: 'VT', name: 'Vermont'}, {code: 'VA', name: 'Virginia'},
+                        {code: 'WA', name: 'Washington'}, {code: 'WV', name: 'West Virginia'},
+                        {code: 'WI', name: 'Wisconsin'}, {code: 'WY', name: 'Wyoming'},
+                        {code: 'DC', name: 'District of Columbia'}
+                    ],
+                    'CA': [
+                        {code: 'AB', name: 'Alberta'}, {code: 'BC', name: 'British Columbia'},
+                        {code: 'MB', name: 'Manitoba'}, {code: 'NB', name: 'New Brunswick'},
+                        {code: 'NL', name: 'Newfoundland and Labrador'}, {code: 'NS', name: 'Nova Scotia'},
+                        {code: 'NT', name: 'Northwest Territories'}, {code: 'NU', name: 'Nunavut'},
+                        {code: 'ON', name: 'Ontario'}, {code: 'PE', name: 'Prince Edward Island'},
+                        {code: 'QC', name: 'Quebec'}, {code: 'SK', name: 'Saskatchewan'},
+                        {code: 'YT', name: 'Yukon'}
+                    ],
+                    'AU': [
+                        {code: 'ACT', name: 'Australian Capital Territory'}, {code: 'NSW', name: 'New South Wales'},
+                        {code: 'NT', name: 'Northern Territory'}, {code: 'QLD', name: 'Queensland'},
+                        {code: 'SA', name: 'South Australia'}, {code: 'TAS', name: 'Tasmania'},
+                        {code: 'VIC', name: 'Victoria'}, {code: 'WA', name: 'Western Australia'}
+                    ]
+                };
+                
+                if (statesData[countryCode]) {
+                    // Add states/provinces to the dropdown
+                    for (const state of statesData[countryCode]) {
+                        const option = document.createElement('option');
+                        option.value = state.code;
+                        option.textContent = state.name;
+                        stateSelect.appendChild(option);
+                    }
+                    
+                    // Enable the state select
+                    stateSelect.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error with states:', error);
+                // Don't show an error message, just leave state disabled
+            }
+        }
+
+        // Event listener for country selection
+        countrySelect.addEventListener('change', () => {
+            const countryCode = countrySelect.value;
+            if (countryCode) {
+                fetchStates(countryCode);
+            } else {
+                // Reset and disable state select if no country is selected
+                stateSelect.innerHTML = '<option value="">Select State/Province</option>';
+                stateSelect.disabled = true;
+            }
+        });
+
+        // Event listener for search button
+        searchButton.addEventListener('click', () => {
+            const locationName = locationInput.value.trim();
+            const country = countrySelect.value;
+            const state = stateSelect.value;
+            
+            if (locationName && country) {
+                fetchWeather(locationName, country, state);
+            } else {
+                weatherInfo.innerHTML = '<p class="error">Please enter a location and select a country.</p>';
+            }
+        });
+
+        // Event listener for Enter key
+        locationInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchButton.click();
+            }
+        });
+
+        // Initialize the app
+        fetchCountries();
+    </script>
+</body>
+</html>
